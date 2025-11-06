@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <title>摄像头+WebXR自检</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+</head>
+<body>
+  <h2 id="m"></h2>
+
+  <script>
+    const m = document.getElementById('m');
+
+    // ①HTTPS 检测
+    m.innerHTML = '① 是否 HTTPS：' + (location.protocol === 'https:' ? '✅' : '❌ 请用 https 打开');
+
+    // ② 摄像头授权
+    navigator.mediaDevices?.getUserMedia({ video: true })
+      .then(() => m.innerHTML += '<br>② 摄像头授权：✅')
+      .catch(e => m.innerHTML += '<br>② 摄像头授权：❌ ' + e);
+
+    // ③ WebXR AR 支持
+    navigator.xr?.isSessionSupported('immersive-ar')
+      .then(y => m.innerHTML += '<br>③ WebXR AR：' + (y ? '✅' : '❌'))
+      .catch(() => m.innerHTML += '<br>③ WebXR AR：❌');
+  </script>
+</body>
+</html>
