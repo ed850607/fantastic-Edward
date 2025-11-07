@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AR 3D模型放置</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+        }
+        #video-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+        }
+        #video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+        #info {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            color: white;
+            font-family: Arial, sans-serif;
+            font-size: 18px;
+            background-color: rgba(0, 0, 0, 0.5);
+            padding: 10px;
+            border-radius: 5px;
+            z-index: 10;
+        }
+    </style>
+</head>
+<body>
+    <div id="video-container">
+        <video id="video" autoplay muted playsinline></video>
+        <canvas id="render-canvas"></canvas>
+    </div>
+    <div id="info">点击屏幕放置3D模型</div>
+
+    <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/examples/js/loaders/GLTFLoader.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/examples/js/WebGL.js"></script>
+
+    <script>
+        let scene, camera, renderer, video, canvas, context;
+        let models = [];
+        let isModelLoaded = false;
+
+        document.addEventListener('DOMContentLoaded', function () {
+            init();
+        });
+
+        function init() {
+            // 初始化摄像头
+            navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
+                .then(function (stream) {
+                    video = document.getElementById('video');
+                    video.srcObject = stream;
+                    video.play();
+                    setupThreeJS();
+                })
+                .catch(function (error) {
+                    console.error('摄像头访问错误:', error);
+                    document.getElementById('info').textContent = '摄像头访问被拒绝，请检查权限设置';
+                });
+        }
+
+        function setupThreeJS() {
+            // 初始化Three.js场景
+            scene = new THREE.Scene();
+            camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.1, 1000);
+            renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.xr.enabled = true;
+            document.body.appendChild(renderer.domElement);
+
+            // 添加环境光
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+            scene.add(ambientLight);
+
+            // 监听窗口大小变化
+            window.addEventListener('resize', function () {
+                camera.aspect = window.innerWidth / window.innerHeight;
+                camera.updateProjectionMatrix();
+                renderer.setSize(window.innerWidth, window.innerHeight);
+            });
+
+            // 加载3D模型
+            loadModel();
+
+            // 开始渲染循环
+            animate();
+        }
+
+        function loadModel() {
+            const loader = new THREE.GLTFLoader();
+            loader.load('https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/master/2.0/Duck/glTF/Duck.gltf', function (gltf) {
+                const model = gltf.scene;
+                model.scale.set(0.1, 0.1, 0.1);
+                model.visible = false;
+                scene.add(model);
+                models.push(model);
+                isModelLoaded = true;
+            }, undefined, function (error) {
+                console.error('模型加载错误:', error);
+            });
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            renderer.render(scene, camera);
+        }
+
+        // 点击事件处理
+        document.getElementById('render-canvas').addEventListener('click', function (event) {
+            if (!isModelLoaded) return;
+
+            // 计算点击位置
+            const rect = renderer.domElement.getBoundingClientRect();
+            const x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+            const y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+            const raycaster = new THREE.Raycaster();
+            raycaster.setFromCamera(new THREE.Vector2(x, y), camera);
+
+            // 简单地将模型放置在点击位置（实际应用中需要更复杂的场景管理）
+            if (models.length > 0) {
+                const model = models[0].clone();
+                model.visible = true;
+                model.position.set(0, 0, -2); // 默认位置，实际应用中需要根据场景调整
+                scene.add(model);
+            }
+        });
+    </script>
+</body>
+</html>
