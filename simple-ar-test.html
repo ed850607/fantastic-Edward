@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>简单AR测试</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #f0f0f0;
+        }
+        #video-container {
+            position: relative;
+            width: 100%;
+            height: 100%;
+        }
+        #video {
+            width: 100%;
+            height: 100%;
+            background-color: #000;
+        }
+        #info {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            color: white;
+            font-family: Arial, sans-serif;
+            font-size: 18px;
+            background-color: rgba(0, 0, 0, 0.5);
+            padding: 10px;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div id="video-container">
+        <video id="video" autoplay muted playsinline></video>
+        <div id="info">点击屏幕以允许摄像头访问</div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const video = document.getElementById('video');
+            const info = document.getElementById('info');
+
+            // 请求摄像头访问
+            navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
+                .then(function(stream) {
+                    video.srcObject = stream;
+                    info.textContent = '摄像头已启用，点击屏幕进行AR操作';
+                    video.play();
+                })
+                .catch(function(error) {
+                    info.textContent = '摄像头访问被拒绝，请检查权限设置';
+                    console.error('摄像头访问错误:', error);
+                });
+
+            // 点击屏幕以开始AR操作
+            document.getElementById('video-container').addEventListener('click', function() {
+                if (video.paused) {
+                    video.play();
+                    info.textContent = 'AR操作已开始';
+                }
+            });
+        });
+    </script>
+</body>
+</html>
